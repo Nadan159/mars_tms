@@ -1,0 +1,268 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    /* Specific Scoreboard Styles */
+    body {
+        background: #eee !important;
+        /* Override dark mode for this specific view if needed, or stick to dark but match request? 
+                                        The user image has a LIGHT/GRAY background. */
+        color: #000;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .main-container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    header.scoreboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 40px;
+        background: white;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        height: 120px;
+    }
+
+    .logo-area {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .logo-img {
+        height: 80px;
+        object-fit: contain;
+    }
+
+    .page-title {
+        font-size: 3em;
+        font-weight: bold;
+        text-align: center;
+        flex: 1;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* Try to match Hebrew font */
+    }
+
+    .timer-container {
+        width: 250px;
+        height: 100px;
+        background: black;
+        border: 4px solid #33ff00;
+        /* Green retro border */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #33ff00;
+        font-family: 'Consolas', monospace;
+        font-size: 3em;
+        font-weight: bold;
+        position: relative;
+    }
+
+    .timer-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .timer-overlay-text {
+        z-index: 2;
+        text-shadow: 0 0 10px #33ff00;
+    }
+
+    /* Table Styles */
+    .scoreboard-table {
+        width: 95%;
+        margin: 20px auto;
+        border-collapse: collapse;
+        background: #ddd;
+        border-radius: 10px 10px 0 0;
+        overflow: hidden;
+        direction: rtl;
+        /* Hebrew RTL */
+    }
+
+    .scoreboard-table thead {
+        background: #ccc;
+        color: #333;
+        font-size: 1.2em;
+        font-weight: bold;
+    }
+
+    .scoreboard-table th {
+        padding: 15px;
+        text-align: center;
+        border-bottom: 2px solid #aaa;
+    }
+
+    .scoreboard-table tbody tr {
+        background: #e6e6e6;
+        /* Light gray rows */
+        border-bottom: 1px solid #ccc;
+        transition: all 0.2s;
+    }
+
+    .scoreboard-table tbody tr:nth-child(even) {
+        background: #d9d9d9;
+    }
+
+    .scoreboard-table tbody tr:hover {
+        transform: scale(1.01);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+        position: relative;
+    }
+
+    .scoreboard-table td {
+        padding: 15px;
+        text-align: center;
+        font-size: 1.2em;
+    }
+
+    .rank-cell {
+        font-weight: bold;
+    }
+
+    .team-cell {
+        text-align: right;
+        padding-right: 30px;
+        font-weight: bold;
+    }
+
+    .score-cell {
+        font-family: monospace;
+        font-size: 1.3em;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.5em;
+        }
+
+        .logo-img {
+            height: 40px;
+        }
+    }
+</style>
+
+<div class="main-container">
+    <header class="scoreboard-header"
+        onclick="document.getElementById('timer-vid-sb').play().then(()=>document.getElementById('timer-vid-sb').pause())">
+        <div class="logo-area">
+            <img src="{{ url_for('static', filename='img/unearthed_logo.png') }}" class="logo-img" alt="Unearthed">
+            <img src="{{ url_for('static', filename='img/First_logo.png') }}" class="logo-img" alt="FIRST">
+        </div>
+
+        <div class="page-title">לוח מובילים</div>
+
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div id="school-logo" style="display: flex; align-items: center; gap: 10px;">
+                <img src="{{ url_for('static', filename='img/school_logo.png') }}"
+                    style="height: 100px; object-fit: contain;" alt="School Logo">
+                <img src="{{ url_for('static', filename='img/mars_logo.png') }}"
+                    style="height: 80px; object-fit: contain;" alt="FLL Mars Team Logo">
+            </div>
+
+            <div class="timer-container" id="scoreboard-timer">
+                <video id="timer-vid-sb" src="{{ url_for('static', filename='TIMER.mp4') }}" playsinline></video>
+                <!-- Fallback/Overlay digits if video fails or for precise sync? Sync is better with digits over video? 
+                     Actually the user wants the video. I'll rely on video. -->
+                <div class="timer-overlay-text" id="sb-timer-digits" style="display:none;">2:30</div>
+            </div>
+        </div>
+    </header>
+
+    <table class="scoreboard-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th style="text-align: right; padding-right: 30px;">קבוצה</th> <!-- Team -->
+                <th>ניקוד הגבוה</th> <!-- High Score -->
+                <th>מקצה אימון</th> <!-- Practice -->
+                <th>מקצה 1</th> <!-- Round 1 -->
+                <th>מקצה 2</th> <!-- Round 2 -->
+                <th>מקצה 3</th> <!-- Round 3 -->
+            </tr>
+        </thead>
+        <tbody id="scoreboard-body">
+            <!-- Populated by JS -->
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Socket is global
+
+    function updateScoreboard() {
+        fetch('/api/scores')
+            .then(res => res.json())
+            .then(data => {
+                // Now data is a list of {id, name, score_practice, score_1, score_2, score_3, max_score}
+                // The API update returns them presorted? Or I need to sort.
+                // My API handles structuring, but maybe not sorting.
+
+                // Sort by high_score descending
+                data.sort((a, b) => b.high_score - a.high_score);
+
+                const tbody = document.getElementById('scoreboard-body');
+                tbody.innerHTML = '';
+
+                data.forEach((t, index) => {
+                    const row = `
+                        <tr>
+                            <td class="rank-cell">${index + 1}</td>
+                            <td class="team-cell">${t.name} <span style="font-size:0.8em; color:#666;">#${t.number}</span></td>
+                            <td class="score-cell" style="font-weight: bold; color: #000;">${t.high_score}</td>
+                            <td class="score-cell" style="color: #666;">${t.practice}</td>
+                            <td class="score-cell">${t.round1}</td>
+                            <td class="score-cell">${t.round2}</td>
+                            <td class="score-cell">${t.round3}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            });
+    }
+
+    socket.on('score_update', () => {
+        updateScoreboard();
+    });
+
+    // Initial Load
+    updateScoreboard();
+
+    // Timer Logic for Scoreboard
+    const sbVideo = document.getElementById('timer-vid-sb');
+    // const sbDigits = document.getElementById('sb-timer-digits');
+
+    socket.on('timer_update', (state) => {
+        if (state.running) {
+            if (sbVideo.paused) sbVideo.play().catch(e => console.log(e));
+
+            const expectedTime = 150 - state.time_left;
+            if (Math.abs(sbVideo.currentTime - expectedTime) > 0.5) {
+                sbVideo.currentTime = expectedTime;
+            }
+        } else {
+            if (state.time_left === 150) {
+                sbVideo.pause();
+                sbVideo.currentTime = 0;
+            } else {
+                sbVideo.pause();
+            }
+        }
+    });
+
+</script>
+{% endblock %}

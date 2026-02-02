@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="grid-container">
+    <a href="/timer" class="glass-panel card">
+        <i class="fa-solid fa-stopwatch icon-large"></i>
+        <h3>Match Timer</h3>
+    </a>
+    <a href="/timer_view" target="_blank" class="glass-panel card">
+        <i class="fa-solid fa-expand icon-large"></i>
+        <h3>Big Timer Display</h3>
+    </a>
+    <a href="/web_scorer" class="glass-panel card">
+        <i class="fa-solid fa-calculator icon-large"></i>
+        <h3>Score Calculator</h3>
+    </a>
+    <a href="/scoreboard" class="glass-panel card">
+        <i class="fa-solid fa-trophy icon-large"></i>
+        <h3>Live Scoreboard</h3>
+    </a>
+    <a href="/scoreboard_view" class="glass-panel card" style="background: #1E88E5; color: white; font-size: 1.3em; min-height: 120px; grid-column: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <i class="fa-solid fa-chart-bar icon-large"></i>
+        <h3>Big Scoreboard View</h3>
+        <span style="font-size:1em; opacity:0.7;">(for display TVs)</span>
+    </a>
+    <a href="/web_scorer" class="glass-panel card" style="background: #43A047; color: white; font-size: 1.3em; min-height: 120px; grid-column: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <i class="fa-solid fa-globe icon-large"></i>
+        <h3>Official Web Scorer</h3>
+        <span style="font-size:1em; opacity:0.7;">and manual entry</span>
+    </a>
+    <a href="/judging" class="glass-panel card">
+        <i class="fa-solid fa-clipboard-check icon-large"></i>
+        <h3>Judging</h3>
+    </a>
+    <a href="/admin" class="glass-panel card">
+        <i class="fa-solid fa-gear icon-large"></i>
+        <h3>Settings</h3>
+    </a>
+</div>
+{% endblock %}

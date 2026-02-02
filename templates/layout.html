@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLL Unearthed TMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <nav>
+        <div class="brand">FLL <span>UNEARTHED</span> MANAGER</div>
+        <div class="lang-selector" style="margin-left:auto; padding: 0 20px;">
+            <select id="lang-select" onchange="updateLanguage(this.value)"
+                style="width: auto; background: rgba(0,0,0,0.5); border: 1px solid #555;">
+                <option value="en">English</option>
+                <option value="he">עברית</option>
+            </select>
+        </div>
+        {% if current_user.is_authenticated %}
+        <ul>
+            <li><a href="/" data-i18n="home">Home</a></li>
+            <li><a href="/timer" data-i18n="timer">Timer</a></li>
+            <li><a href="/timer_view" target="_blank"> <i class="fa-solid fa-expand"></i></a></li>
+            <li><a href="/scorer" data-i18n="scorer">Scorer</a></li>
+            <li><a href="/scoreboard" data-i18n="scoreboard">Scoreboard</a></li>
+            <li><a href="/judging" data-i18n="judging">Judging</a></li>
+            {% if current_user.role == 'admin' %}
+            <li><a href="/admin" data-i18n="admin">Admin</a></li>
+            {% endif %}
+            <li><a href="/logout" style="color: #ff5252;" data-i18n="logout">Logout</a></li>
+        </ul>
+        {% endif %}
+    </nav>
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        const socket = io();
+    </script>
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

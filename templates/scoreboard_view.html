@@ -1,0 +1,198 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    /* Fullscreen Scoreboard View - Clean */
+    body,
+    html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #eee;
+        color: #000;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    nav {
+        display: none !important;
+    }
+
+    /* Hide nav */
+    .grid-container {
+        display: none !important;
+    }
+
+    .sb-only-container {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    header.sb-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 40px;
+        background: white;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        height: 15vh;
+        box-sizing: border-box;
+    }
+
+    .logo-area {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .logo-img {
+        height: 10vh;
+        object-fit: contain;
+    }
+
+    .page-title {
+        font-size: 4vh;
+        font-weight: bold;
+        text-align: center;
+        flex: 1;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .timer-container {
+        width: 20vw;
+        height: 12vh;
+        background: black;
+        border: 0.5vh solid #33ff00;
+        position: relative;
+    }
+
+    .timer-container video {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .sb-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    table.sb-table {
+        width: 100%;
+        border-collapse: collapse;
+        direction: rtl;
+        font-size: 2vh;
+    }
+
+    table.sb-table th {
+        background: #ccc;
+        padding: 1vh;
+        position: sticky;
+        top: 0;
+    }
+
+    table.sb-table td {
+        padding: 1vh;
+        border-bottom: 1px solid #ccc;
+        text-align: center;
+    }
+
+    table.sb-table tr:nth-child(even) {
+        background: #e0e0e0;
+    }
+
+    table.sb-table tr:nth-child(odd) {
+        background: #f0f0f0;
+    }
+</style>
+
+<div class="sb-only-container">
+    <header class="sb-header" onclick="enableAudio()">
+        <div class="logo-area">
+            <img src="{{ url_for('static', filename='img/unearthed_logo.png') }}" class="logo-img" alt="Unearthed">
+            <img src="{{ url_for('static', filename='img/First_logo.png') }}" class="logo-img" alt="FIRST">
+        </div>
+        <div class="page-title">לוח מובילים</div>
+        <div style="display: flex; align-items: center; gap: 2vw;">
+            <div style="display: flex; align-items: center; gap: 1vw;">
+                <img src="{{ url_for('static', filename='img/school_logo.png') }}"
+                    style="height: 10vh; object-fit: contain;" alt="School Logo">
+                <img src="{{ url_for('static', filename='img/mars_logo.png') }}"
+                    style="height: 8vh; object-fit: contain;" alt="FLL Mars Team Logo">
+            </div>
+            <div class="timer-container">
+                <video id="sb-timer-video" src="{{ url_for('static', filename='TIMER.mp4') }}" playsinline></video>
+            </div>
+        </div>
+    </header>
+
+    <div class="sb-content">
+        <table class="sb-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th style="text-align: right;">קבוצה</th>
+                    <th>ניקוד הגבוה</th>
+                    <th>מקצה אימון</th>
+                    <th>מקצה 1</th>
+                    <th>מקצה 2</th>
+                    <th>מקצה 3</th>
+                </tr>
+            </thead>
+            <tbody id="sb-body"></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Socket is global
+    const video = document.getElementById('sb-timer-video');
+
+    function enableAudio() {
+        video.play().then(() => video.pause());
+    }
+
+    function updateScoreboard() {
+        fetch('/api/scores')
+            .then(res => res.json())
+            .then(data => {
+                data.sort((a, b) => b.high_score - a.high_score);
+                const tbody = document.getElementById('sb-body');
+                tbody.innerHTML = '';
+                data.forEach((t, index) => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><b>${index + 1}</b></td>
+                            <td style="text-align: right; padding-right: 20px;">${t.name} <small>#${t.number}</small></td>
+                            <td style="font-weight: bold; font-size: 1.2em;">${t.high_score}</td>
+                            <td style="color: #666;">${t.practice}</td>
+                            <td>${t.round1}</td>
+                            <td>${t.round2}</td>
+                            <td>${t.round3}</td>
+                        </tr>
+                    `;
+                });
+            });
+    }
+
+    updateScoreboard();
+    socket.on('score_update', updateScoreboard);
+
+    socket.on('timer_update', (state) => {
+        const expectedTime = 150 - state.time_left;
+        if (Math.abs(video.currentTime - expectedTime) > 1.0) {
+            video.currentTime = expectedTime;
+        }
+
+        if (state.running) {
+            if (video.paused) video.play().catch(e => console.log(e));
+        } else {
+            if (!video.paused) video.pause();
+        }
+    });
+</script>
+{% endblock %}

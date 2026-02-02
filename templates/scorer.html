@@ -1,0 +1,524 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="glass-panel" style="max-width: 900px; margin: 20px auto;">
+        <h2><i class="fa-solid fa-calculator" style="color: var(--secondary);"></i> <span data-i18n="scorer">Score
+                        Calculator</span></h2>
+
+        <!-- Team Select -->
+        <div class="form-group">
+                <label data-i18n="team">Team</label>
+                <select id="team-select" style="margin-bottom: 20px;">
+                        {% for team in teams %}
+                        <option value="{{ team.id }}">{{ team.number }} - {{ team.name }}</option>
+                        {% else %}
+                        <option>No teams found</option>
+                        {% endfor %}
+                </select>
+        </div>
+
+        <form id="score-form">
+
+                <!-- Inspection -->
+                <div class="mission-group" style="border-left: 4px solid var(--accent);">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-ruler-combined"></i> <span
+                                                data-i18n="eib_title">Equipment Inspection</span></div>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="eib_desc">Robot and all equipment fit...</span>
+                                <input type="hidden" name="eib_bonus" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'eib_bonus', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'eib_bonus', 20)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="pt_desc">Precision Tokens Remaining</span>
+                                <input type="hidden" name="precision_tokens" value="6">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'precision_tokens', 0)">0</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'precision_tokens', 1)">1</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'precision_tokens', 2)">2</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'precision_tokens', 3)">3</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'precision_tokens', 4)">4</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'precision_tokens', 5)">5</button>
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'precision_tokens', 6)">6</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M01 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-brush"></i> <span
+                                                data-i18n="m01_title">M01 Surface Brushing</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M01')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m01_desc1">Deposits Cleared</span>
+                                <input type="hidden" name="m01_deposits" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm01_deposits', 0)">0</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm01_deposits', 1)">1</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm01_deposits', 2)">2</button>
+                                </div>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m01_desc2">Brush NOT touching</span>
+                                <input type="hidden" name="m01_brush" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm01_brush', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm01_brush', 10)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M02 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-map"></i> <span
+                                                data-i18n="m02_title">M02 Map Reveal</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M02')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m02_desc">Topsoil Cleared</span>
+                                <input type="hidden" name="m02_cleared" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm02_cleared', 0)">0</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm02_cleared', 1)">1</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm02_cleared', 2)">2</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm02_cleared', 3)">3</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M03 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-dungeon"></i> <span
+                                                data-i18n="m03_title">M03 Mineshaft Explorer</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M03')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m03_desc1">Cart on opposing field</span>
+                                <input type="hidden" name="m03_cross" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm03_cross', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm03_cross', 30)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m03_desc2">Bonus: Opposing cart on yours</span>
+                                <input type="hidden" name="m03_bonus" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm03_bonus', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm03_bonus', 10)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M04 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-hand-holding-medical"></i> <span
+                                                data-i18n="m04_title">M04 Careful Recovery</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M04')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m04_desc1">Artifact safe</span>
+                                <input type="hidden" name="m04_artifact" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm04_artifact', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm04_artifact', 30)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m04_desc2">Supports standing</span>
+                                <input type="hidden" name="m04_supports" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm04_supports', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm04_supports', 10)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M05 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-house-chimney"></i> <span
+                                                data-i18n="m05_title">M05 Who Lived Here?</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M05')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m05_desc">Solved</span>
+                                <input type="hidden" name="m05_solved" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm05_solved', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm05_solved', 30)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M06 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-fire-burner"></i> <span
+                                                data-i18n="m06_title">M06 Forge</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M06')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m06_desc">Ore Blocks</span>
+                                <input type="hidden" name="m06_count" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm06_count', 0)">0</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm06_count', 1)">1</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm06_count', 2)">2</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm06_count', 3)">3</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M07 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-weight-hanging"></i> <span
+                                                data-i18n="m07_title">M07 Heavy Lifting</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M07')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m07_desc">Millstone not touching base</span>
+                                <input type="hidden" name="m07_millstone" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm07_millstone', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm07_millstone', 30)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M08 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-warehouse"></i> <span
+                                                data-i18n="m08_title">M08 Silo</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M08')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m08_desc">Preserved pieces outside</span>
+                                <input type="hidden" name="m08_count" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm08_count', 0)">0</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm08_count', 1)">1</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm08_count', 2)">2</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm08_count', 3)">3</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M09 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-shop"></i> <span
+                                                data-i18n="m09_title">M09 What's On Sale?</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M09')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m09_desc1">Roof raised</span>
+                                <input type="hidden" name="m09_roof" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm09_roof', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm09_roof', 20)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m09_desc2">Wares raised</span>
+                                <input type="hidden" name="m09_wares" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm09_wares', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm09_wares', 10)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M10 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-scale-balanced"></i> <span
+                                                data-i18n="m10_title">M10 Tip the Scales</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M10')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m10_desc1">Tipped</span>
+                                <input type="hidden" name="m10_tipped" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm10_tipped', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm10_tipped', 20)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m10_desc2">Pan removed</span>
+                                <input type="hidden" name="m10_removed" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm10_removed', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm10_removed', 10)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M11 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-fish"></i> <span
+                                                data-i18n="m11_title">M11 Angler Artifacts</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M11')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m11_desc1">Raised</span>
+                                <input type="hidden" name="m11_raised" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm11_raised', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm11_raised', 20)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m11_desc2">Flag lowered</span>
+                                <input type="hidden" name="m11_flag" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm11_flag', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm11_flag', 10)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M12 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-life-ring"></i> <span
+                                                data-i18n="m12_title">M12 Salvage Operation</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M12')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m12_desc1">Sand cleared</span>
+                                <input type="hidden" name="m12_sand" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm12_sand', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm12_sand', 20)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m12_desc2">Ship raised</span>
+                                <input type="hidden" name="m12_ship" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm12_ship', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm12_ship', 10)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M13 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-person-digging"></i> <span
+                                                data-i18n="m13_title">M13 Statue Rebuild</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M13')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m13_desc">Statue Upright</span>
+                                <input type="hidden" name="m13_upright" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm13_upright', 0)" data-i18n="no">No</button>
+                                        <button type="button" class="score-btn bool-yes"
+                                                onclick="setBtn(this, 'm13_upright', 30)" data-i18n="yes">Yes</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M14 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-comments"></i> <span
+                                                data-i18n="m14_title">M14 Forum</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M14')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m14_desc">Check items touching mat & in
+                                        forum:</span>
+                                <div class="score-checkbox-group">
+                                        <div class="score-checkbox-item" onclick="toggleCheck(this)">
+                                                <input type="checkbox" name="m14_brush" value="5"> <span
+                                                        data-i18n="m14_opt_brush">Brush</span>
+                                        </div>
+                                        <div class="score-checkbox-item" onclick="toggleCheck(this)">
+                                                <input type="checkbox" name="m14_opp_cart" value="5"> <span
+                                                        data-i18n="m14_opt_opp_cart">Opp Cart</span>
+                                        </div>
+                                        <div class="score-checkbox-item" onclick="toggleCheck(this)">
+                                                <input type="checkbox" name="m14_pan" value="5"> <span
+                                                        data-i18n="m14_opt_pan">Scale Pan</span>
+                                        </div>
+                                        <div class="score-checkbox-item" onclick="toggleCheck(this)">
+                                                <input type="checkbox" name="m14_topsoil" value="5"> <span
+                                                        data-i18n="m14_opt_topsoil">Topsoil</span>
+                                        </div>
+                                        <div class="score-checkbox-item" onclick="toggleCheck(this)">
+                                                <input type="checkbox" name="m14_ore" value="5"> <span
+                                                        data-i18n="m14_opt_ore">Ore w/ Fossil</span>
+                                        </div>
+                                        <div class="score-checkbox-item" onclick="toggleCheck(this)">
+                                                <input type="checkbox" name="m14_artifact" value="5"> <span
+                                                        data-i18n="m14_opt_artifact">Artifact</span>
+                                        </div>
+                                        <div class="score-checkbox-item" onclick="toggleCheck(this)">
+                                                <input type="checkbox" name="m14_millstone" value="5"> <span
+                                                        data-i18n="m14_opt_millstone">Millstone</span>
+                                        </div>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- M15 -->
+                <div class="mission-group">
+                        <div class="mission-header">
+                                <div class="mission-title"><i class="fa-solid fa-flag"></i> <span
+                                                data-i18n="m15_title">M15 Site Marking</span></div>
+                                <button type="button" class="btn-icon" onclick="showMissionImage('M15')"><i
+                                                class="fa-regular fa-image"></i></button>
+                        </div>
+                        <div class="score-row">
+                                <span class="score-label" data-i18n="m15_desc">Flags Placed</span>
+                                <input type="hidden" name="m15_count" value="0">
+                                <div class="score-btn-group">
+                                        <button type="button" class="score-btn active"
+                                                onclick="setBtn(this, 'm15_count', 0)">0</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm15_count', 1)">1</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm15_count', 2)">2</button>
+                                        <button type="button" class="score-btn"
+                                                onclick="setBtn(this, 'm15_count', 3)">3</button>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- Footer Score -->
+                <div class="mission-group">
+                        <div class="mission-title" style="border-top: 1px solid #444; padding-top: 10px;">
+                                <span data-i18n="total_score">Total Score</span>:
+                                <span id="total-score" style="color: var(--primary); font-size: 1.5rem;">0</span>
+                        </div>
+                </div>
+
+                <!-- Signatures -->
+                <div class="glass-panel" style="margin-bottom: 20px; padding: 15px;">
+                        <h3 style="margin-bottom: 10px; color: var(--secondary);">Signatures</h3>
+
+                        <label>Referee Name</label>
+                        <input type="text" id="ref-name" name="ref_name" placeholder="Enter Referee Name" required
+                                style="margin-bottom: 15px;">
+
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 300px;">
+                                        <label>Referee Signature</label>
+                                        <div class="signature-wrapper">
+                                                <canvas id="sig-ref" width="300" height="150"></canvas>
+                                                <button type="button" class="btn-clear"
+                                                        onclick="clearSig('ref')">Clear</button>
+                                        </div>
+                                </div>
+                                <div style="flex: 1; min-width: 300px;">
+                                        <label>Team Member Signature</label>
+                                        <div class="signature-wrapper">
+                                                <canvas id="sig-team" width="300" height="150"></canvas>
+                                                <button type="button" class="btn-clear"
+                                                        onclick="clearSig('team')">Clear</button>
+                                        </div>
+                                </div>
+                        </div>
+                </div>
+
+                <button type="button" onclick="submitScore()" class="btn btn-primary" data-i18n="submit_score">Submit
+                        Score</button>
+        </form>
+</div>
+
+<!-- Image Modal -->
+<div id="image-modal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content">
+                <div class="modal-close" onclick="closeModal(event, true)">&times;</div>
+                <img id="modal-img" src="" alt="Mission Image"
+                        onerror="this.onerror=null; this.src='/static/img/no-image.svg';">
+        </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/scorer.js') }}"></script>
+{% endblock %}

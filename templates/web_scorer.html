@@ -1,0 +1,680 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="glass-panel" style="max-width: 1100px; margin: 30px auto;">
+    <h2 style="margin-bottom:15px">
+        <i class="fa-solid fa-globe"></i>
+        Official FLL Scorer
+    </h2>
+    <div style="width:100%;overflow:auto;height:650px;max-width:1000px;margin:auto;background:#222;padding:12px 0;border-radius:16px;">
+        <iframe id="official-scorer-iframe" 
+                data-base-url="https://fll-events.firstisrael.org.il/tools/scorer?lang=he"
+                style="width:100%;height:600px;border:none;border-radius:12px;background:#fff;" 
+                allowfullscreen
+                allow="autoplay; fullscreen; geolocation; microphone; camera"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+    <script>
+        // Set iframe src immediately with language parameter (before DOMContentLoaded)
+        (function() {
+            const iframe = document.getElementById('official-scorer-iframe');
+            if (iframe) {
+                const baseUrl = iframe.getAttribute('data-base-url') || 'https://fll-events.firstisrael.org.il/tools/scorer?lang=he';
+                const savedLang = localStorage.getItem('fll_lang') || 'he';
+                const langParam = savedLang === 'he' ? '?lang=he' : '?lang=he';
+                iframe.src = baseUrl + langParam;
+            }
+        })();
+    </script>
+    
+    <!-- Action Buttons -->
+    <div style="text-align: center; margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+        <button onclick="openMissionGallery()" class="btn btn-secondary" style="font-size: 1.1em; padding: 12px 24px;">
+            <i class="fa-solid fa-images"></i> View Mission Images
+        </button>
+        <button onclick="openScorerInNewWindow()" class="btn btn-secondary" style="font-size: 1.1em; padding: 12px 24px;">
+            <i class="fa-solid fa-external-link-alt"></i> Open Scorer in New Window
+        </button>
+    </div>
+    
+    <!-- Simplified Manual Entry Section -->
+    <div class="glass-panel" style="margin-top:35px; padding: 20px;">
+        <h3 style="margin-bottom:20px;"><i class="fa-solid fa-keyboard"></i> Manual Score Entry & Signatures</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div class="form-group">
+                <label>Team</label>
+                <select id="team-select" style="width:100%; padding: 8px;">
+                    {% for team in teams %}
+                    <option value="{{ team.id }}">{{ team.number }} - {{ team.name }}</option>
+                    {% else %}
+                    <option>No teams found</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Round</label>
+                <select id="round-select" style="width:100%; padding: 8px;">
+                    <option value="Practice">Practice Match</option>
+                    <option value="1" selected>Match 1</option>
+                    <option value="2">Match 2</option>
+                    <option value="3">Match 3</option>
+                </select>
+            </div>
+            <div class="form-group" id="table-select-group" style="display: none;">
+                <label>Table Number <span style="color: red;">*</span></label>
+                <select id="table-select" style="width:100%; padding: 8px;">
+                    <option value="">Select Table</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label>Manual Score Entry</label>
+            <input type="number" id="manual-score" placeholder="Enter total score" style="width:100%; padding: 10px; font-size: 1.2em;" min="0">
+        </div>
+
+        <!-- Signatures -->
+        <div class="glass-panel" style="margin-bottom: 20px; padding: 15px;">
+            <h3 style="margin-bottom: 10px; color: var(--secondary);">Signatures</h3>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 300px;">
+                    <label>Referee Signature</label>
+                    <div class="signature-wrapper">
+                        <canvas id="sig-ref" width="300" height="150"></canvas>
+                        <button type="button" class="btn-clear" onclick="clearSig('ref')">Clear</button>
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 300px;">
+                    <label>Team Member Signature</label>
+                    <div class="signature-wrapper">
+                        <canvas id="sig-team" width="300" height="150"></canvas>
+                        <button type="button" class="btn-clear" onclick="clearSig('team')">Clear</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="button" id="ready-btn" onclick="toggleReady()" class="btn btn-secondary" style="flex:1;">
+                <i class="fa-solid fa-check"></i> Set Ready
+            </button>
+            <button type="button" onclick="submitScore()" class="btn btn-primary" style="flex:1;">
+                <i class="fa-solid fa-paper-plane"></i> Submit Score
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Timer Popup (will be injected by JS) -->
+<div id="timer-overlay" style="display: none; position: fixed; top: 15px; right: 15px; width: 280px; z-index: 9999; background: #000; border: 2px solid #ff5722; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.8);">
+    <div style="background: #222; padding: 4px 10px; display: flex; justify-content: space-between; align-items: center; color: #fff; font-size: 0.8em; font-family: 'Outfit', sans-serif;">
+        <span><i class="fa-solid fa-stopwatch"></i> Match Timer</span>
+        <span id="overlay-digits" style="font-weight: bold; color: #ff5722;">02:30</span>
+    </div>
+    <video id="overlay-video" src="/static/TIMER.mp4" style="width: 100%; display: block;" muted playsinline></video>
+</div>
+
+<!-- Mission Images Gallery Modal -->
+<div id="mission-gallery-modal" class="modal-overlay" onclick="closeMissionGallery(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; overflow-y: auto; padding: 20px;">
+    <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 1200px; margin: 0 auto; background: #1a1a1a; border-radius: 12px; padding: 20px; position: relative;">
+        <div class="modal-close" onclick="closeMissionGallery(event, true)" style="position: absolute; top: 10px; right: 15px; font-size: 2em; color: #fff; cursor: pointer; z-index: 10001;">&times;</div>
+        <h2 style="color: #fff; margin-bottom: 20px; text-align: center;">
+            <i class="fa-solid fa-images"></i> Mission Images Gallery
+        </h2>
+        <div id="mission-gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+            <!-- Mission images will be inserted here -->
+        </div>
+    </div>
+</div>
+
+<style>
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+}
+
+.modal-content {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 2em;
+    color: #fff;
+    cursor: pointer;
+    z-index: 10001;
+    background: rgba(0,0,0,0.5);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s;
+}
+
+.modal-close:hover {
+    background: rgba(255,0,0,0.7);
+}
+
+.mission-image-card {
+    background: #2a2a2a;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.mission-image-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 20px rgba(0,150,255,0.5);
+}
+
+.mission-image-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.mission-image-card h3 {
+    color: #fff;
+    margin: 0;
+    font-size: 1.1em;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script>
+// Signature Pads
+let sigRef, sigTeam;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const canvasRef = document.getElementById('sig-ref');
+    const canvasTeam = document.getElementById('sig-team');
+
+    function resizeCanvas(canvas) {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+    }
+
+    if (canvasRef && canvasTeam) {
+        resizeCanvas(canvasRef);
+        resizeCanvas(canvasTeam);
+        sigRef = new SignaturePad(canvasRef);
+        sigTeam = new SignaturePad(canvasTeam);
+
+        window.addEventListener("resize", function () {
+            resizeCanvas(canvasRef);
+            resizeCanvas(canvasTeam);
+            sigRef.clear();
+            sigTeam.clear();
+        });
+    }
+});
+
+function clearSig(type) {
+    if (type === 'ref' && sigRef) sigRef.clear();
+    else if (type === 'team' && sigTeam) sigTeam.clear();
+}
+
+// Ready Button Logic
+let isReady = false;
+function toggleReady() {
+    isReady = !isReady;
+    const btn = document.getElementById('ready-btn');
+    if (!btn) return;
+    if (isReady) {
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-success');
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Ready!';
+        socket.emit('table_ready', { ready: true });
+    } else {
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-secondary');
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Set Ready';
+        socket.emit('table_ready', { ready: false });
+    }
+}
+
+// Load tables and check user role
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize iframe language
+    const savedLang = localStorage.getItem('fll_lang') || 'en';
+    updateIframeLanguage(savedLang);
+    
+    // Register callback for language changes
+    window.onLanguageChange = function(lang) {
+        updateIframeLanguage(lang);
+    };
+    
+    // Also listen for storage changes (in case language is changed in another tab)
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'fll_lang') {
+            updateIframeLanguage(e.newValue || 'en');
+        }
+    });
+    
+    // Load tables
+    fetch('/api/tables')
+        .then(res => res.json())
+        .then(tables => {
+            const tableSelect = document.getElementById('table-select');
+            tables.forEach(table => {
+                if (table.is_active) {
+                    const option = document.createElement('option');
+                    option.value = table.id;
+                    option.textContent = table.name;
+                    tableSelect.appendChild(option);
+                }
+            });
+        });
+    
+    // Check if user is judge - show table selector
+    fetch('/api/user-info')
+        .then(res => res.json())
+        .then(data => {
+            if (data.role === 'judge') {
+                document.getElementById('table-select-group').style.display = 'block';
+                document.querySelector('#table-select').setAttribute('required', 'required');
+            }
+        })
+        .catch(() => {
+            console.log('Could not fetch user info');
+        });
+});
+
+// Submit Score
+function submitScore() {
+    const teamId = document.getElementById('team-select').value;
+    const round = document.getElementById('round-select').value;
+    const tableId = document.getElementById('table-select').value;
+    const manualScore = document.getElementById('manual-score').value;
+
+    if (!teamId || teamId === 'No teams found') {
+        alert('Please select a team');
+        return;
+    }
+
+    if (!manualScore || manualScore === '') {
+        alert('Please enter a score');
+        return;
+    }
+
+    const scoreValue = parseInt(manualScore);
+    if (isNaN(scoreValue) || scoreValue < 0) {
+        alert('Please enter a valid score');
+        return;
+    }
+
+    if (!sigRef || sigRef.isEmpty()) {
+        alert('Referee signature is required');
+        return;
+    }
+
+    if (!sigTeam || sigTeam.isEmpty()) {
+        alert('Team member signature is required');
+        return;
+    }
+
+    const details = {
+        referee_name: 'Manual Entry',
+        sig_ref: sigRef.toDataURL(),
+        sig_team: sigTeam.toDataURL(),
+        source: 'web_scorer_manual'
+    };
+
+    fetch('/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            team_id: teamId,
+            table_id: tableId || null,
+            total: scoreValue,
+            round: round,
+            details: JSON.stringify(details)
+        })
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert('Score Submitted Successfully! Total: ' + data.total);
+                // Clear form
+                document.getElementById('manual-score').value = '';
+                sigRef.clear();
+                sigTeam.clear();
+            }
+        })
+        .catch(err => {
+            alert('Error submitting score: ' + err.message);
+        });
+}
+
+// Timer Popup Logic
+const getOverlayVideo = () => document.getElementById('overlay-video');
+const getOverlayDigits = () => document.getElementById('overlay-digits');
+const getOverlay = () => document.getElementById('timer-overlay');
+
+socket.on('timer_update', (state) => {
+    const overlay = getOverlay();
+    const video = getOverlayVideo();
+    const digits = getOverlayDigits();
+
+    if (!overlay || !video) return;
+
+    if (state.running) {
+        overlay.style.display = 'block';
+        if (video.paused) video.play().catch(e => console.log('Autoplay prevented'));
+
+        const expectedTime = 150 - state.time_left;
+        if (Math.abs(video.currentTime - expectedTime) > 0.5) {
+            video.currentTime = expectedTime;
+        }
+    } else {
+        if (state.time_left === 150) {
+            overlay.style.display = 'none';
+            video.pause();
+            video.currentTime = 0;
+        } else {
+            video.pause();
+        }
+    }
+
+    const min = Math.floor(state.time_left / 60);
+    const sec = state.time_left % 60;
+    if (digits) digits.innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+});
+
+socket.on('timer_end', () => {
+    // Keep showing
+});
+
+// Update iframe language when language changes
+function updateIframeLanguage(lang) {
+    const iframe = document.getElementById('official-scorer-iframe');
+    if (!iframe) return;
+    
+    const baseUrl = iframe.getAttribute('data-base-url') || 'https://fll-events.firstisrael.org.il/tools/scorer';
+    
+    // Try ALL common language parameter formats systematically
+    // We'll try them in order of likelihood
+    const langParams = lang === 'he' ? [
+        '?lang=he',
+        '?lang=hebrew', 
+        '?lang=iw',  // Old Hebrew code
+        '?language=he',
+        '?language=hebrew',
+        '?l=he',
+        '?locale=he',
+        '?locale=he_IL',
+        '?hl=he',
+        '?ui=he',
+        '?lang=he&ui=he',
+        '?setLang=he',
+        '?changeLang=he'
+    ] : [
+        '?lang=en',
+        '?language=en',
+        '?l=en',
+        '?locale=en',
+        '?hl=en',
+        '?ui=en'
+    ];
+    
+    // Try the first (most common) format
+    const langParam = langParams[0];
+    const newUrl = baseUrl + langParam;
+    
+    // Get current URL without query params for comparison
+    const currentBase = iframe.src.split('?')[0];
+    
+    // Update iframe URL - this will reload the iframe
+    if (currentBase === baseUrl) {
+        if (iframe.src !== newUrl) {
+            iframe.src = newUrl;
+        }
+    } else {
+        iframe.src = newUrl;
+    }
+    
+    // Try postMessage with multiple message formats (in case external site supports it)
+    const messages = [
+        { type: 'changeLanguage', language: lang, locale: lang },
+        { type: 'setLanguage', lang: lang },
+        { type: 'language', value: lang },
+        { action: 'changeLanguage', lang: lang },
+        { command: 'setLang', lang: lang }
+    ];
+    
+    messages.forEach(msg => {
+        try {
+            iframe.contentWindow.postMessage(msg, '*');
+        } catch (e) {
+            // Expected - cross-origin restrictions
+        }
+    });
+    
+    // Try to interact with iframe after it loads (with retries)
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    const tryInteractWithIframe = () => {
+        attempts++;
+        if (attempts > maxAttempts) return;
+        
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (!iframeDoc) {
+                // Iframe not ready yet, try again
+                setTimeout(tryInteractWithIframe, 500);
+                return;
+            }
+            
+            // Try to find language selector by various methods
+            const selectors = [
+                'select[name*="lang" i]',
+                'select[id*="lang" i]',
+                'select[class*="lang" i]',
+                'button[aria-label*="language" i]',
+                'button[aria-label*="lang" i]',
+                '[data-lang]',
+                '[data-language]',
+                '.language-selector',
+                '.lang-selector',
+                'select option[value*="he"]',
+                'select option:contains("עברית")',
+                'a[href*="lang=he"]',
+                'a[href*="language=he"]'
+            ];
+            
+            for (const selector of selectors) {
+                try {
+                    const element = iframeDoc.querySelector(selector);
+                    if (element) {
+                        if (element.tagName === 'SELECT') {
+                            // Try to find Hebrew option
+                            const options = Array.from(element.options || []);
+                            const hebrewOption = options.find(opt => {
+                                const val = (opt.value || '').toLowerCase();
+                                const text = (opt.text || '').toLowerCase();
+                                return val.includes('he') || val.includes('hebrew') || 
+                                       val === 'iw' || text.includes('עברית') ||
+                                       text.includes('hebrew');
+                            });
+                            
+                            if (hebrewOption && lang === 'he') {
+                                element.value = hebrewOption.value;
+                                element.dispatchEvent(new Event('change', { bubbles: true }));
+                                element.dispatchEvent(new Event('input', { bubbles: true }));
+                                console.log('Successfully set language to Hebrew');
+                                return;
+                            } else if (lang === 'en') {
+                                const englishOption = options.find(opt => {
+                                    const val = (opt.value || '').toLowerCase();
+                                    return val.includes('en') || val === 'en' || val === 'english';
+                                });
+                                if (englishOption) {
+                                    element.value = englishOption.value;
+                                    element.dispatchEvent(new Event('change', { bubbles: true }));
+                                    element.dispatchEvent(new Event('input', { bubbles: true }));
+                                    console.log('Successfully set language to English');
+                                    return;
+                                }
+                            }
+                        } else if (element.tagName === 'BUTTON' || element.tagName === 'A') {
+                            // Try clicking to open dropdown, then find Hebrew option
+                            element.click();
+                            setTimeout(() => {
+                                const hebrewOption = iframeDoc.querySelector(
+                                    '[data-lang="he"], [data-language="he"], ' +
+                                    'button:contains("עברית"), a:contains("עברית"), ' +
+                                    '[value="he"], [value="hebrew"]'
+                                );
+                                if (hebrewOption && lang === 'he') {
+                                    hebrewOption.click();
+                                    console.log('Successfully clicked Hebrew option');
+                                }
+                            }, 200);
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    // Continue trying other selectors
+                }
+            }
+        } catch (e) {
+            // Cross-origin error - expected, but try again after delay
+            if (attempts < maxAttempts) {
+                setTimeout(tryInteractWithIframe, 1000);
+            }
+        }
+    };
+    
+    // Start trying to interact after iframe loads
+    iframe.addEventListener('load', () => {
+        setTimeout(tryInteractWithIframe, 1000);
+    });
+    
+    // Also try immediately if iframe is already loaded
+    if (iframe.contentDocument || iframe.contentWindow?.document) {
+        setTimeout(tryInteractWithIframe, 500);
+    }
+}
+
+// Open scorer in new window with current language
+function openScorerInNewWindow() {
+    const savedLang = localStorage.getItem('fll_lang') || 'en';
+    const baseUrl = 'https://fll-events.firstisrael.org.il/tools/scorer';
+    const langParam = savedLang === 'he' ? '?lang=he' : '?lang=en';
+    const url = baseUrl + langParam;
+    window.open(url, '_blank', 'width=1200,height=800');
+}
+
+// Mission Gallery Functions
+function openMissionGallery() {
+    const modal = document.getElementById('mission-gallery-modal');
+    const grid = document.getElementById('mission-gallery-grid');
+    
+    // Clear previous content
+    grid.innerHTML = '';
+    
+    // Mission names mapping
+    const missionNames = {
+        'M01': 'M01 - Surface Brushing',
+        'M02': 'M02 - Map Reveal',
+        'M03': 'M03 - Mineshaft Explorer',
+        'M04': 'M04 - Careful Recovery',
+        'M05': 'M05 - Who Lived Here?',
+        'M06': 'M06 - Forge',
+        'M07': 'M07 - Heavy Lifting',
+        'M08': 'M08 - Silo',
+        'M09': 'M09 - What\'s On Sale?',
+        'M10': 'M10 - Tip the Scales',
+        'M11': 'M11 - Angler Artifacts',
+        'M12': 'M12 - Salvage Operation',
+        'M13': 'M13 - Statue Rebuild'
+    };
+    
+    // Create image cards for each mission
+    for (let i = 1; i <= 13; i++) {
+        const missionId = `M${i.toString().padStart(2, '0')}`;
+        const missionName = missionNames[missionId] || missionId;
+        
+        const card = document.createElement('div');
+        card.className = 'mission-image-card';
+        card.innerHTML = `
+            <img src="/static/mission_images/${missionId}.png" 
+                 alt="${missionName}" 
+                 onerror="this.onerror=null; this.src='/static/img/no-image.svg';"
+                 onclick="showFullImage('${missionId}')">
+            <h3>${missionName}</h3>
+        `;
+        grid.appendChild(card);
+    }
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closeMissionGallery(event, force) {
+    if (force || event.target.id === 'mission-gallery-modal') {
+        document.getElementById('mission-gallery-modal').style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
+    }
+}
+
+function showFullImage(missionId) {
+    // Open individual mission image in a larger view
+    const img = new Image();
+    img.src = `/static/mission_images/${missionId}.png`;
+    img.onload = function() {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10002; display: flex; align-items: center; justify-content: center; cursor: pointer;';
+        modal.onclick = function() { document.body.removeChild(modal); };
+        
+        const imgContainer = document.createElement('div');
+        imgContainer.style.cssText = 'max-width: 90%; max-height: 90%; position: relative;';
+        
+        const closeBtn = document.createElement('div');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.style.cssText = 'position: absolute; top: -40px; right: 0; color: #fff; font-size: 3em; cursor: pointer;';
+        closeBtn.onclick = function(e) { e.stopPropagation(); document.body.removeChild(modal); };
+        
+        const fullImg = document.createElement('img');
+        fullImg.src = img.src;
+        fullImg.style.cssText = 'max-width: 100%; max-height: 90vh; border-radius: 8px; box-shadow: 0 5px 30px rgba(0,0,0,0.8);';
+        fullImg.onerror = function() { this.src = '/static/img/no-image.svg'; };
+        
+        imgContainer.appendChild(closeBtn);
+        imgContainer.appendChild(fullImg);
+        modal.appendChild(imgContainer);
+        document.body.appendChild(modal);
+    };
+}
+</script>
+{% endblock %}

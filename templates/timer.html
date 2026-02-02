@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="glass-panel" style="max-width: 800px; margin: 50px auto; text-align: center;">
+    <h2>Match Timer</h2>
+    <!-- Video Timer -->
+    <div style="position: relative; width: 100%; padding-top: 56.25%; background: black; margin-bottom: 20px;">
+        <video id="timer-video" src="{{ url_for('static', filename='TIMER.mp4') }}"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" playsinline></video>
+        <div id="click-overlay" onclick="initAudio()"
+            style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 10; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; background: rgba(0,0,0,0.3);">
+            <h3>Click here to enable audio</h3>
+        </div>
+    </div>
+    <div style="background: rgba(0,255,0,0.1); padding: 10px; margin-bottom: 20px; border-radius: 5px; color: #4caf50;">
+        <i class="fa-solid fa-check-circle"></i> Tables Ready: <span id="ready-count"
+            style="font-weight: bold; font-size: 1.2em;">0</span>
+    </div>
+    <div class="controls">
+        <button onclick="startTimer()" class="btn btn-primary">Start</button>
+        <button onclick="stopTimer()" class="btn btn-secondary">Stop</button>
+        <button onclick="resetTimer()" class="btn btn-danger">Reset</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/timer.js') }}"></script>
+{% endblock %}
