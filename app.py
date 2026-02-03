@@ -147,11 +147,7 @@ def timer():
 def scoreboard():
     return render_template('scoreboard.html')
 
-@app.route('/judging')
-@login_required
-def judging():
-    teams = Team.query.all()
-    return render_template('judging.html', teams=teams)
+
 
 @app.route('/timer_view')
 def timer_view():
