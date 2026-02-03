@@ -6,7 +6,6 @@ This is a complete Tournament Management System for the FLL Unearthed season, bu
 - **Match Timer**: Real-time synchronized 2:30 timer with sounds generated in-browser.
 - **Scorer**: Score calculator for the Unearthed missions.
 - **Scoreboard**: Live ranking of teams.
-- **Judging**: Digital rubrics for Core Values, Innovation Project, and Robot Design.
 - **Admin**: Manage teams and generate schedules.
 
 ## Prerequisites
@@ -25,3 +24,7 @@ This is a complete Tournament Management System for the FLL Unearthed season, bu
 
 ## Notes
 - To use the timer sounds, ensure you interact with the page (click "Start") so the browser allows audio playback.
+
+## info 
+
+for more info you can open an issue or dm us on insstgram @3140_marsmonkeys dveloped by nadav and antigravity 
