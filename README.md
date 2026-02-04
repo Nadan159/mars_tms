@@ -15,7 +15,7 @@ This is a complete Tournament Management System for the FLL Unearthed season, bu
 1. navigate to this directory `cd fll_tms`
 2. Run `run.bat` to install dependencies and start the server.
 3. Open `http://127.0.0.1:5000` in your browser.
-4. default username and pass are "admin"
+4. default username and password are "admin"
 ## Tech Stack
 - **Backend**: Python (Flask)
 - **Real-time**: Flask-SocketIO
