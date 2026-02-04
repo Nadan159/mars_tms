@@ -100,12 +100,34 @@ def setup_database():
     with app.app_context():
         migrate_database()  # Run migration first
         db.create_all()  # Create any missing tables
-        if not User.query.filter_by(username='admin').first():
-            hashed_pw = bcrypt.generate_password_hash('admin').decode('utf-8')
+        
+        # Read admin password from file
+        admin_pass = 'admin'
+        password_file = 'admin_password.txt'
+        print(f"Checking password file: {os.path.abspath(password_file)}")
+        if os.path.exists(password_file):
+             with open(password_file, 'r') as f:
+                 content = f.read().strip()
+                 if content:
+                     admin_pass = content
+        else:
+             with open(password_file, 'w') as f:
+                 f.write(admin_pass)
+        
+        admin_user = User.query.filter_by(username='admin').first()
+        if not admin_user:
+            hashed_pw = bcrypt.generate_password_hash(admin_pass).decode('utf-8')
             admin = User(username='admin', password=hashed_pw, role='admin')
             db.session.add(admin)
             db.session.commit()
-            print("Admin user created (user: admin, pass: admin)")
+            print(f"Admin user created (pass from file)")
+        else:
+            # Update password if it doesn't match the file
+            if not bcrypt.check_password_hash(admin_user.password, admin_pass):
+                hashed_pw = bcrypt.generate_password_hash(admin_pass).decode('utf-8')
+                admin_user.password = hashed_pw
+                db.session.commit()
+                print("Admin password updated from file")
 
 setup_database()
 
@@ -118,9 +140,25 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Sync admin password on login attempt too, just in case file changed while running
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        
+        if username == 'admin':
+            admin_pass = 'admin'
+            if os.path.exists('admin_password.txt'):
+                 with open('admin_password.txt', 'r') as f:
+                     content = f.read().strip()
+                     if content:
+                         admin_pass = content
+                         
+            user = User.query.filter_by(username='admin').first()
+            if user and not bcrypt.check_password_hash(user.password, admin_pass):
+                 hashed_pw = bcrypt.generate_password_hash(admin_pass).decode('utf-8')
+                 user.password = hashed_pw
+                 db.session.commit()
+                 
         user = User.query.filter_by(username=username).first()
         if user and bcrypt.check_password_hash(user.password, password):
             login_user(user)
@@ -546,9 +584,18 @@ def delete_team(team_id):
     if not team:
         return jsonify({"error": "Team not found"}), 404
     
-    db.session.delete(team)
-    db.session.commit()
-    return jsonify({"message": "Team deleted"})
+    # Manually cascade delete to avoid foreign key errors
+    try:
+        Score.query.filter_by(team_id=team_id).delete()
+        Match.query.filter((Match.team1_id == team_id) | (Match.team2_id == team_id)).delete()
+        Timesheet.query.filter_by(team_id=team_id).delete()
+        
+        db.session.delete(team)
+        db.session.commit()
+        return jsonify({"message": "Team deleted"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 # --- SocketIO Events ---
 

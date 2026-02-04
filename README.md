@@ -25,6 +25,12 @@ This is a complete Tournament Management System for the FLL Unearthed season, bu
 ## Notes
 - To use the timer sounds, ensure you interact with the page (click "Start") so the browser allows audio playback.
 
+- also you can edit the addmin password in the admin_password.txt file just change the text to what you want and save it
+
+- i am working on a scorer that can save whitch misions are selected and a more optimized view for mobile devices and a more user friendly interface
+
+
+
 ## info 
 
 for more info you can open an issue or dm us on insstgram @3140_marsmonkeys dveloped by nadav and antigravity 
