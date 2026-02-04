@@ -1,0 +1,5 @@
+# HTTrack Website Copier Cookie File
+# This file format is compatible with Netscape cookies
+fll-events.firstisrael.org.il	TRUE	/	FALSE	1999999999	LEMS_LOCALE	he
+fll-events.firstisrael.org.il	TRUE	/	FALSE	1999999999	SameSite	lax
+
