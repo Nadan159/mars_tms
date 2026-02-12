@@ -131,6 +131,55 @@ def setup_database():
 
 setup_database()
 
+
+# --- Helpers ---
+def get_local_ip():
+    """Get the actual local network IP address (not 127.0.0.1)"""
+    import socket
+    try:
+        # Method 1: Connect to external address to determine local IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(('8.8.8.8', 80))
+            ip = s.getsockname()[0]
+            s.close()
+            if ip and not ip.startswith('127.'):
+                return ip
+        except:
+            s.close()
+        
+        # Method 2: Parse Windows ipconfig output
+        import platform
+        if platform.system() == 'Windows':
+            try:
+                import subprocess
+                result = subprocess.run(['ipconfig'], capture_output=True, text=True, timeout=5)
+                for line in result.stdout.split('\n'):
+                    line = line.strip()
+                    if 'IPv4' in line or ('IP Address' in line and 'IPv4' not in line):
+                        parts = line.split(':')
+                        if len(parts) > 1:
+                            potential_ip = parts[-1].strip().split()[0]
+                            if potential_ip and not potential_ip.startswith('127.') and potential_ip.count('.') == 3:
+                                try:
+                                    socket.inet_aton(potential_ip)
+                                    return potential_ip
+                                except:
+                                    pass
+            except Exception as e:
+                print(f"Error parsing ipconfig: {e}")
+        
+        # Method 3: Try hostname resolution
+        hostname = socket.gethostname()
+        ip = socket.gethostbyname(hostname)
+        if ip and not ip.startswith('127.'):
+            return ip
+            
+        return '127.0.0.1'
+    except Exception as e:
+        print(f"Error getting IP: {e}")
+        return request.remote_addr if request.remote_addr else '127.0.0.1'
+
 # --- Routes ---
 
 @app.route('/')
@@ -176,7 +225,8 @@ def logout():
 @app.route('/timer')
 @login_required
 def timer():
-    return render_template('timer.html')
+    ip_address = get_local_ip()
+    return render_template('timer.html', ip_address=ip_address)
 
 # Removed /scorer route - use /web_scorer instead
 
@@ -233,60 +283,7 @@ def admin():
     matches = Match.query.all()
     scores = Score.query.order_by(Score.timestamp.desc()).all()
     
-    # Get actual local network IP address
-    def get_local_ip():
-        """Get the actual local network IP address (not 127.0.0.1)"""
-        try:
-            # Method 1: Connect to external address to determine local IP
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            try:
-                s.connect(('8.8.8.8', 80))
-                ip = s.getsockname()[0]
-                s.close()
-                if ip and not ip.startswith('127.'):
-                    return ip
-            except:
-                s.close()
-            
-            # Method 2: Parse Windows ipconfig output
-            import platform
-            if platform.system() == 'Windows':
-                try:
-                    import subprocess
-                    result = subprocess.run(['ipconfig'], capture_output=True, text=True, timeout=5)
-                    current_adapter = None
-                    for line in result.stdout.split('\n'):
-                        line = line.strip()
-                        if 'adapter' in line.lower() and 'ethernet' in line.lower() or 'wireless' in line.lower():
-                            current_adapter = line
-                        if 'IPv4' in line or ('IP Address' in line and 'IPv4' not in line):
-                            parts = line.split(':')
-                            if len(parts) > 1:
-                                potential_ip = parts[-1].strip().split()[0]  # Get first IP if multiple
-                                if potential_ip and not potential_ip.startswith('127.') and potential_ip.count('.') == 3:
-                                    # Validate it's a real IP
-                                    try:
-                                        socket.inet_aton(potential_ip)
-                                        return potential_ip
-                                    except:
-                                        pass
-                except Exception as e:
-                    print(f"Error parsing ipconfig: {e}")
-            
-            # Method 3: Try hostname resolution
-            hostname = socket.gethostname()
-            ip = socket.gethostbyname(hostname)
-            if ip and not ip.startswith('127.'):
-                return ip
-            
-            # Method 4: Try to get from request
-            if request.remote_addr and request.remote_addr != '127.0.0.1':
-                return request.remote_addr
-                
-            return '127.0.0.1'
-        except Exception as e:
-            print(f"Error getting IP: {e}")
-            return request.remote_addr if request.remote_addr else '127.0.0.1'
+
     
     hostname = socket.gethostname()
     ip_address = get_local_ip()
@@ -535,6 +532,52 @@ def handle_timesheets():
             "judge": ts.judge_name
         })
     return jsonify(results)
+
+@app.route('/api/remote/timer', methods=['GET', 'POST'])
+def remote_timer_control():
+    # Auth via query params
+    username = request.args.get('username')
+    password = request.args.get('password')
+    
+    if not username or not password:
+        return jsonify({"error": "Missing username or password"}), 401
+        
+    user = User.query.filter_by(username=username).first()
+    if not user or not bcrypt.check_password_hash(user.password, password):
+        return jsonify({"error": "Invalid credentials"}), 401
+    
+    # Check for action in args
+    action = request.args.get('action')
+    # Also support JSON/Form data if sent
+    if not action and request.json:
+        action = request.json.get('action')
+        
+    if not action:
+        return jsonify({"error": "Missing action"}), 400
+    
+    if action == 'start':
+        if not timer_state['running'] and timer_state['time_left'] > 0:
+            timer_state['running'] = True
+            timer_state['start_time'] = time.monotonic()
+            socketio.emit('timer_update', timer_state)
+            return "Timer Started"
+    
+    elif action == 'stop':
+        if timer_state['running']:
+            timer_state['running'] = False
+            elapsed = time.monotonic() - timer_state['start_time']
+            timer_state['time_left'] -= elapsed
+            socketio.emit('timer_update', timer_state)
+            return "Timer Stopped"
+            
+    elif action == 'reset':
+        timer_state['running'] = False
+        timer_state['time_left'] = 150
+        timer_state['start_time'] = None
+        socketio.emit('timer_update', timer_state)
+        return "Timer Reset"
+            
+    return "Action Ignored (Timer running or invalid state)", 200
 
 @app.route('/api/erase_all', methods=['POST'])
 @login_required

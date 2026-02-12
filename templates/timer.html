@@ -20,6 +20,32 @@
         <button onclick="stopTimer()" class="btn btn-secondary">Stop</button>
         <button onclick="resetTimer()" class="btn btn-danger">Reset</button>
     </div>
+
+    <!-- Remote Control Info -->
+    <div
+        style="margin-top: 30px; text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; font-size: 0.9em;">
+        <h4 style="margin-top: 0;">Remote Control URLs</h4>
+        <p>Trigger the timer from external devices/scripts using these URLs (replace <code>USER</code> and
+            <code>PASS</code> with admin credentials):</p>
+
+        <div style="margin-bottom: 10px;">
+            <strong>Start:</strong><br>
+            <code
+                style="word-break: break-all; user-select: all;">http://{{ ip_address }}:5000/api/remote/timer?action=start&username=USER&password=PASS</code>
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <strong>Stop:</strong><br>
+            <code
+                style="word-break: break-all; user-select: all;">http://{{ ip_address }}:5000/api/remote/timer?action=stop&username=USER&password=PASS</code>
+        </div>
+
+        <div>
+            <strong>Reset:</strong><br>
+            <code
+                style="word-break: break-all; user-select: all;">http://{{ ip_address }}:5000/api/remote/timer?action=reset&username=USER&password=PASS</code>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
